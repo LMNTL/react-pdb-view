@@ -1,13 +1,20 @@
 import React from "react";
 import { render } from "react-dom";
-import MyComponent from "../../lib";
+import PDBContainer from "../lib";
 import "./styles.css";
 
 function Demo() {
   return (
     <div>
       <h1>Demo with examples of the component</h1>
-      <MyComponent color="brown">Wow what a button</MyComponent>
+      <PDBContainer
+        offset={1}
+        url="https://s3.us-east-2.amazonaws.com/jsthomas-portfolio/4r70.pdb"
+        width="600px"
+        height="600px"
+      >
+
+      </PDBContainer>
     </div>
   );
 }
