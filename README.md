@@ -8,5 +8,5 @@ Prop | Variable Type | description
 `atomRadius` | number (float) | Radius of each individual atom (arbitrary radius;)
 `width` | string | Width of the PDB Viewer component
 `height` | string | Height of the PDB Viewer component
-`antialiasing` | boolean | Turn antialiasing on or off
+`antialiasing` | boolean | Enable/disable antialiasing
 `cameraDistance` | number | The distance of the camera from the origin point

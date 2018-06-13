@@ -13,8 +13,11 @@ module.exports = {
     rules: [
       {
         test: /\.(js|jsx)$/,
-        use: "babel-loader",
-        exclude: /node_modules/
+        use: "babel-loader"
+      },
+      {
+        test: /node_modules[/\\]three-full/,
+        use: "shebang-loader"
       },
       {
         test: /\.css$/,
