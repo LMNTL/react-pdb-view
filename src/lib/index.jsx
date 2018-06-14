@@ -1,19 +1,20 @@
 import React, { Component } from "react";
 import {
-  IcosahedronBufferGeometry,
-  Group,
   BoxBufferGeometry,
-  PDBLoader,
-  Scene,
-  Vector3,
-  PerspectiveCamera,
-  WebGLRenderer,
   Clock,
+  Detector,
+  Group,
+  IcosahedronBufferGeometry,
   Mesh,
   MeshPhongMaterial,
   MeshNormalMaterial,
-  Detector
-} from "three-full";
+  OrbitControls,
+  PerspectiveCamera,
+  PDBLoader,
+  Scene,
+  Vector3,
+  WebGLRenderer,
+} from "../../node_modules/three-full/builds/Three.es.min.js";
 
 export default class PDBContainer extends Component {
   constructor(props) {
