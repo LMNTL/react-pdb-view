@@ -1,10 +1,11 @@
 import React, { Component } from "react";
 import {
   BoxBufferGeometry,
-  Clock,
   Detector,
   Group,
   IcosahedronBufferGeometry,
+  InstancedBufferGeometry,
+  InstancedBufferAttributes,
   Mesh,
   MeshPhongMaterial,
   MeshNormalMaterial,
@@ -16,7 +17,7 @@ import {
   WebGLRenderer,
 } from "../../node_modules/three-full/builds/Three.es.min.js";
 
-export default class PDBContainer extends Component {
+export default class PDBView extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -44,8 +45,7 @@ export default class PDBContainer extends Component {
   componentWillUnmount() {
     this.stop();
     this.mount.removeChild(this.renderer.domElement);
-    window.removeEventListener("mouseup", this.stopDrag);
-    window.removeEventListener("mousemove", this.updateDrag);
+    this.controls.dispose();
     window.removeEventListener("resize", this.resizeRenderer);
   }
 
@@ -58,18 +58,19 @@ export default class PDBContainer extends Component {
     const height = this.mount.clientHeight;
     const scene = new Scene();
     const camera = new PerspectiveCamera(75, width / height, 0.1, 1000);
+    const controls = new OrbitControls( camera, this.mount );
+    controls.autoRotate = this.props.autoRotate;
     const renderer = new WebGLRenderer({
       antialias: this.props.antialiasing,
       alpha: true
     });
     renderer.shadowMapEnabled = true;
-    camera.position.z = 150;
+    camera.position.z = this.props.cameraDistance;
     renderer.autoClear = false;
     renderer.setClearColor(0x000000, 0.0);
     renderer.setSize(width, height);
-    const clock = new Clock();
 
-    this.clock = clock;
+    this.controls = controls;
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
@@ -96,22 +97,12 @@ export default class PDBContainer extends Component {
   };
 
   animate = () => {
-    const sinceLastFrame = this.clock.getDelta();
-    if (this.rotating && !this.dragging) {
-      this.root.rotateY(0.1 * sinceLastFrame);
-      this.root.rotateX(0.04 * sinceLastFrame);
-    } else {
-      this.rotating = true;
-    }
-    if (this.dragging) {
-      this.root.rotateY(this.dragX / 100);
-      this.root.rotateX(this.dragY / 100);
-    }
     this.renderScene();
     this.frameId = window.requestAnimationFrame(this.animate);
   };
 
   renderScene() {
+    this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -125,8 +116,8 @@ export default class PDBContainer extends Component {
       let object = root.children[0];
       object.parent.remove(object);
     }
-    var loader = new PDBLoader();
-    var offset = new Vector3();
+    const loader = new PDBLoader();
+    let offset = new Vector3();
     loader.load(url, function(pdb) {
       try {
         let geometryAtoms = pdb.geometryAtoms;
@@ -139,16 +130,20 @@ export default class PDBContainer extends Component {
         geometryBonds.translate(offset.x, offset.y, offset.z);
         let positions = geometryAtoms.getAttribute("position");
         let colors = geometryAtoms.getAttribute("color");
+        const material = new MeshNormalMaterial();
         let position = new Vector3();
-        for (let i = 0; i < positions.count; i += 5) {
+        const offsets = [];
+        let geometry = new InstancedBufferGeometry();
+        geometry.maxInstancedCount = positions.count;
+        for (let i = 0; i < positions.count; i += 1 + scope.props.atomIncrement) {
           position.x = positions.getX(i);
           position.y = positions.getY(i);
           position.z = positions.getZ(i);
-          const material = new MeshNormalMaterial();
+          offsets.push(position);
           const object = new Mesh(sphereGeometry, material);
           object.position.copy(position);
           object.position.multiplyScalar(75);
-          object.scale.multiplyScalar(300);
+          object.scale.multiplyScalar(scope.props.atomSize);
           root.add(object);
         }
         positions = geometryBonds.getAttribute("position");
@@ -167,7 +162,7 @@ export default class PDBContainer extends Component {
           end.z = positions.getZ(i + 1);
           start.multiplyScalar(75);
           end.multiplyScalar(75);
-          const object = new Mesh(boxGeometry, new MeshPhongMaterial(0xffffff));
+          const object = new Mesh(sphereGeometry, new MeshPhongMaterial(0xffffff));
           object.position.copy(start);
           object.position.lerp(end, 0.5);
           object.scale.set(5, 5, start.distanceTo(end));
@@ -181,40 +176,6 @@ export default class PDBContainer extends Component {
     });
   };
 
-  displayGUI = event => {
-    this.setState({ gui: true });
-  };
-
-  hideGUI = event => {
-    this.setState({ gui: false });
-  };
-
-  startDrag = event => {
-    event.preventDefault();
-    this.clientX = event.clientX;
-    this.clientY = event.clientY;
-    this.dragging = true;
-    this.rotating = false;
-    window.addEventListener("mouseup", this.stopDrag);
-    window.addEventListener("mousemove", this.updateDrag);
-  };
-
-  updateDrag = event => {
-    event.preventDefault();
-    this.dragX = event.clientX - this.clientX;
-    this.dragY = event.clientY - this.clientY;
-    this.clientX = event.clientX;
-    this.clientY = event.clientY;
-  };
-
-  stopDrag = event => {
-    event.preventDefault();
-    this.dragging = false;
-    this.rotating = true;
-    window.removeEventListener("mouseup", this.stopDrag);
-    window.removeEventListener("mousemove", this.updateDrag);
-  };
-
   render() {
     return (
       <div
@@ -225,22 +186,25 @@ export default class PDBContainer extends Component {
           margin: 0
         }}
         className="threecanvas"
-        onMouseEnter={this.displayGUI}
-        onMouseLeave={this.hideGUI}
-        draggable="true"
-        onDragStart={this.startDrag}
         ref={mount => {
           this.mount = mount;
         }}
       >
         {this.state.loading && !this.state.useFallback ? (
           <div className="loader" />
-        ) : (
-          <p className="gui">Click and drag to rotate the molecule.</p>
-        )}
+        ) : null }
 
         {this.state.useFallback ? <img src="./pdbfallback.jpg" /> : null}
       </div>
     );
   }
 }
+
+PDBView.defaultProps = {
+  atomIncrement: 0,
+  atomSize: 300,
+  atomDistance: 75,
+  width: '40vw',
+  height: '40vh',
+  cameraDistance: 150,
+};
