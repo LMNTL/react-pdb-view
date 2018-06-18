@@ -8,7 +8,7 @@ function Demo() {
     <div>
       <h1>Demo with examples of the component</h1>
       <PDBView
-        atomIncrement={2}
+        atomIncrement={0}
         url="https://files.rcsb.org/download/6C4G.pdb"
         width="600px"
         height="600px"
