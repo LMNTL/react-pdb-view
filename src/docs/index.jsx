@@ -8,14 +8,17 @@ function Demo() {
     <div>
       <h1>Demo with examples of the component</h1>
       <PDBView
+        className="demo"
         atomIncrement={0}
         url="https://files.rcsb.org/download/6C4G.pdb"
-        width="600px"
-        height="600px"
-        atomSize={200}
-        atomDistance={75}
-        cameraDistance={150}
-        autoRotate={false}
+        width="80vh"
+        height="80vh"
+        atomSize={1.5}
+        atomDistance={0.5}
+        cameraDistance={50}
+        autoRotate={true}
+        loader={<div class="loader"/>}
+        shader="normal"
       />
     </div>
   );

@@ -127,30 +127,33 @@ export default class PDBView extends Component {
 
       "uniform mat4 modelViewMatrix;",
       "uniform mat4 projectionMatrix;",
+      "uniform mat4 normalMatrix;",
       "attribute vec2 uv;",
       "attribute vec3 position;",
       "attribute vec3 offset;",
-      "attribute vec4 orientation;",
+      "attribute vec3 normal;",
       "varying vec2 vUv;",
-
-  		"vec3 applyQuaternionToVector( vec4 q, vec3 v ){",
-        "return v + 2.0 * cross( q.xyz, cross( q.xyz, v ) + q.w * v );",
-      "}",
+      "varying vec3 vNormal;",
+      "varying vec3 vPosition;",
 
       "void main() {",
-  
-        "vec3 vPosition = applyQuaternionToVector( orientation, position );",
+
+        "vNormal = normal;",
+        "vPosition = position;",
         "vUv = uv;",
-        "gl_Position = projectionMatrix * modelViewMatrix * vec4( offset + vPosition, 1.0 );",
+        "gl_Position = projectionMatrix * modelViewMatrix * vec4( offset + position, 1.0 );",
       "}",
     ].join("\n");
 
     const fragmentShader = [
       "precision highp float;",
-      "",
+      "varying vec3 vNormal;",
+      "varying vec2 vUv;",
+      "varying vec3 vPosition;",
+      "uniform vec3 cameraPosition;",
       "void main() {",
       "",
-      " gl_FragColor = vec4(0, 0, 0, 0.5);",
+      " gl_FragColor = vec4(vNormal, 1.0);",
       "",
       "}"
     ].join("\n");
@@ -160,7 +163,7 @@ export default class PDBView extends Component {
       vertexShader: vertexShader,
       fragmentShader: fragmentShader,
       side: DoubleSide,
-      transparent: false
+      transparent: true
     });
 
     const loader = new PDBLoader();
@@ -170,7 +173,6 @@ export default class PDBView extends Component {
         let geometryAtoms = pdb.geometryAtoms;
         const geometryBonds = pdb.geometryBonds;
         const json = pdb.json;
-        console.log(geometryAtoms)
         const sphereGeometry = new IcosahedronBufferGeometry( 1, 2 );
 
         geometryAtoms.computeBoundingBox();
@@ -189,50 +191,21 @@ export default class PDBView extends Component {
         let [x, y, z] = [0, 0, 0];
 
 
-        let geometry = new InstancedBufferGeometry();
+        let geometry = new InstancedBufferGeometry().copy(sphereGeometry);
         geometry.attributes.position = sphereGeometry.attributes.position;
-        geometry.attributes.offset = geometryAtoms.attributes.position;
+        geometry.attributes.offset = positions;
         geometry.attributes.uv = sphereGeometry.attributes.uv;
-        geometry.maxInstancedCount = instances;
-        console.log(geometry);
+        geometry.computeBoundingBox();
         for (let i = 0; i < instances; i += 1 + scope.props.atomIncrement) {
-          x = positions.getX(i);
-          y = positions.getY(i);
-          z = positions.getZ(i);
-          position.set(x, y, z, 0).normalize();
-          position.multiplyScalar( 75 );
-          offsets.push( position.x + offset.x, position.y + offset.y, position.z + offset.z );
-          orientation.set( Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1 ).normalize();
-          orientations.push( orientation.x, orientation.y, orientation.z, orientation.w );
+          x = positions.getX(i) * scope.props.atomDistance;
+          y = positions.getY(i) * scope.props.atomDistance;
+          z = positions.getZ(i) * scope.props.atomDistance;
+          offsets.push( x, y, z );
         }
-
-        //geometry.addAttribute( 'offsets', new InstancedBufferAttribute( new Float32Array( offsets ), 3 ), 1 );
-        geometry.addAttribute( 'orientation', new InstancedBufferAttribute( new Float32Array( orientations ), 4 ), 1 );
+        geometry.addAttribute( 'offset', new InstancedBufferAttribute( new Float32Array( offsets ), 3) );
         const mesh = new Mesh( geometry, mat );
+        mesh.scale.multiplyScalar(scope.props.atomSize);
         scope.scene.add(mesh);
-/*        positions = geometryBonds.getAttribute("position");
-        let start = new Vector3();
-        let end = new Vector3();
-        for (
-          let i = 0;
-          i < positions.count;
-          i += 1 + scope.props.atomIncrement
-        ) {
-          start.x = positions.getX(i);
-          start.y = positions.getY(i);
-          start.z = positions.getZ(i);
-          end.x = positions.getX(i + 1);
-          end.y = positions.getY(i + 1);
-          end.z = positions.getZ(i + 1);
-          start.multiplyScalar(75);
-          end.multiplyScalar(75);
-          const object = new Mesh(sphereGeometry, new MeshPhongMaterial(0xffffff));
-          object.position.copy(start);
-          object.position.lerp(end, 0.5);
-          object.scale.set(5, 5, start.distanceTo(end));
-          object.lookAt(end);
-          root.add(object);
-        }*/
       } catch (error) {
         console.log(error);
         scope.setState({ useFallback: true, loading: false });
@@ -249,13 +222,13 @@ export default class PDBView extends Component {
           display: "inline-block",
           margin: 0
         }}
-        className="threecanvas"
+        className={this.props.className}
         ref={mount => {
           this.mount = mount;
         }}
       >
         {this.state.loading && !this.state.useFallback ? (
-          <div className="loader" />
+          this.props.loader
         ) : null }
 
         {this.state.useFallback ? <img src="./pdbfallback.jpg" /> : null}

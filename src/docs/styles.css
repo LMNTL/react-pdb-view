@@ -2,3 +2,28 @@ body {
   background: #eee;
   font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
 }
+
+.demo {
+  background: linear-gradient(45deg, #e66465, #9198e5);
+}
+
+.loader {
+  position: absolute;
+  z-index: 2;
+  flex: 1;
+  margin: 140px 140px;
+  border: 16px solid #5f9cdf;
+  border: 16px solid #5f9cdf;
+  border-top: 16px solid #8200c9;
+  border-radius: 50%;
+  box-sizing: border-box;
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
+}
+
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

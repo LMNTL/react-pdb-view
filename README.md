@@ -2,8 +2,9 @@
 
 ## How to use it
 
-If you're in a hurry, the only required prop is `url`. `<PDBView>` is used as such:
+If you're in a hurry, the only required prop is `url`.
 
+`<PDBView>` is used as such:
 `   <PDBView
         url="https://files.rcsb.org/download/6C4G.pdb"
         atomIncrement={0}
