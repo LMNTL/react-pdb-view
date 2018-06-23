@@ -2,7 +2,7 @@
 
 ## What is it?
 
-A simple React component for displaying molecular orbital models from Protein Databank (.pdb) files. Uses [three-full](https://github.com/Itee/three-full) and the PDBLoader class from the Three.js examples to load and display models in a WebGL context.
+A simple React component for displaying molecular orbital models from Protein Databank (.pdb) files. Uses [three-full](https://github.com/Itee/three-full) and the PDBLoader class from the Three.js examples to load and display models in a WebGL context. Take a look at the demo [here](https://lmntl.github.io/react-pdb-view/).
 
 ## How to use it
 
