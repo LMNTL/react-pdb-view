@@ -40,3 +40,4 @@ Prop | Variable Type | description | Default Value
 - Add keyboard controls for rotation/zooming to OrbitControls
 - Accessibility audit (probably add a colorblind mode too)
 - Caching .pdb files
+- Ribbon diagrams (secondary/tertiary structure)

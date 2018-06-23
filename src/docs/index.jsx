@@ -50,7 +50,7 @@ class Demo extends Component {
           atomDistance={0.5}
           cameraDistance={50}
           loader={<div class="loader"/>}
-          fallback={<h1 class="fallback">Couldn't load PDBView component! You can pass a custom element to display at awkward moments like these using the "fallback" prop.</h1>}
+          fallback={<h1 class="fallback bg">Couldn't load PDBView component! You can pass a custom element to display at awkward moments like these using the "fallback" prop, e.g. an image of the component.</h1>}
         />
       </div>
     );
