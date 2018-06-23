@@ -1,27 +1,99 @@
+html {
+  min-height: 100%;
+  width: 100%;
+  position: relative;
+}
+
 body {
   background: #eee;
+  margin: 0;
+  height: 100%;
   font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
 }
 
 .demo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  margin: 0;
+  border: 0;
+  overflow:hidden;
+  box-sizing: border-box;
+}
+
+.bg {
+  background: rgba(170, 170, 170, 0.7);
+  border: 0.1em solid  rgb(120, 120, 120);
+  box-sizing: border-box;
+  padding: 1em;
+}
+
+.instructions {
+  position: absolute;
+  bottom: 1em;
+  width: 100%;
+  z-index: 2;
+  white-space: pre-wrap;
+  animation: appear 0.5s ease-in-out;
+}
+
+.changeURL {
+  position: absolute;
+  right: 0;
+  margin: 1em;
+}
+
+.urlInput {
+  width: 30vw;
+}
+
+.title{
+  position: absolute;
+  z-index: 2;
+  margin: 1em;
+  animation: appear 0.2s ease-in-out;
+}
+
+@keyframes appear {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.pdb {
   background: linear-gradient(45deg, #e66465, #9198e5);
+  margin: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-content: center;
 }
 
 .loader {
   position: absolute;
-  z-index: 2;
+  left: 40vw;
+  bottom: 40vh;
   flex: 1;
-  margin: 140px 140px;
-  border: 16px solid #5f9cdf;
-  border: 16px solid #5f9cdf;
-  border-top: 16px solid #8200c9;
+  margin: auto;
+  border: 16px solid #ffffff;
+  border-top: 16px solid #a16ebd;
   border-radius: 50%;
   box-sizing: border-box;
-  width: 120px;
-  height: 120px;
-  animation: spin 2s linear infinite;
+  width: 20vh;
+  height: 20vh;
+  animation: spin 1s linear infinite;
 }
 
+.fallback {
+  position: absolute;
+  top: 50vh;
+  margin: 0 4em 0 4em;
+}
 
 @keyframes spin {
   0% { transform: rotate(0deg); }

@@ -1,5 +1,9 @@
 # React PDB Viewer
 
+## What is it?
+
+A simple React component for displaying molecular orbital models from Protein Databank (.pdb) files. Uses [three-full](https://github.com/Itee/three-full) and the PDBLoader class from the Three.js examples to load and display models in a WebGL context.
+
 ## How to use it
 
 If you're in a hurry, the only required prop is `url`.
@@ -20,10 +24,19 @@ Prop | Variable Type | description | Default Value
 ------------ | ------------- | ------------- | -------------
 `url` | string | URL of a valid .pdb file. | Required
 `atomIncrement` | number (integer) | Number of atoms to skip while loading. If `atomIncrement` is 3, the viewer will only load and display every 4th atom from the source file. Tweak for speed. | `0`
-`atomSize` | number (float) | Corresponds to the radius of each individual atom | `300`
-`width` | string | Width of the PDB Viewer component | `40vw`
-`height` | string | Height of the PDB Viewer component | `40vh`
+`atomSize` | number (float) | Corresponds to the radius of each individual atom | `1`
+`atomDistance` | number (float) | Distance between atoms in the model | `0.5`
+`width` | string | Width of the PDB Viewer component. Accepts relative or absolute units. | `400px`
+`height` | string | Height of the PDB Viewer component. Accepts relative or absolute units. | `400px`
 `antialiasing` | boolean | Enable/disable antialiasing | `false`
 `cameraDistance` | number | The distance of the camera from the origin point | `150`
-`autorotate` | boolean | Should the camera automatically rotate around the molecule? | `true`
-`pan` | boolean | Allow panning
+`autoRotate` | boolean | Should the camera automatically rotate around the molecule? | `true`
+`pan` | boolean | Allow panning when right-click dragging? | `true`
+`loader` | JSX element | Element to display while loading, e.g. a CSS spinner. | null
+`fallback` | JSX element | Element displayed in case the component fails to load or errors during operation | null
+
+## Todos:
+- Add additional shader options
+- Add keyboard controls for rotation/zooming to OrbitControls
+- Accessibility audit (probably add a colorblind mode too)
+- Caching .pdb files

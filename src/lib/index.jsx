@@ -4,13 +4,10 @@ import {
   BufferAttribute,
   Detector,
   DoubleSide,
-  Group,
   IcosahedronBufferGeometry,
   InstancedBufferGeometry,
   InstancedBufferAttribute,
   Mesh,
-  MeshPhongMaterial,
-  MeshNormalMaterial,
   OrbitControls,
   PerspectiveCamera,
   PDBLoader,
@@ -27,8 +24,7 @@ export default class PDBView extends Component {
     super(props);
     this.state = {
       useFallback: false,
-      loading: true,
-      gui: false
+      loading: true
     };
     this.rotating = true;
     this.mouseX = 0;
@@ -43,7 +39,7 @@ export default class PDBView extends Component {
     if (Detector.webgl) {
       this.startRendering();
     } else {
-      this.setState({ useFallback: true });
+      this.setState({ useFallback: true, loading: false });
     }
   }
 
@@ -55,7 +51,7 @@ export default class PDBView extends Component {
   }
 
   componentDidCatch( error, info ) {
-    this.setState({ useFallback: true });
+    this.setState({ useFallback: true, loading: false });
   }
 
   startRendering = () => {
@@ -65,6 +61,7 @@ export default class PDBView extends Component {
     const camera = new PerspectiveCamera(75, width / height, 0.1, 1000);
     const controls = new OrbitControls( camera, this.mount );
     controls.autoRotate = this.props.autoRotate;
+    controls.pan = this.props.pan;
     const renderer = new WebGLRenderer({
       antialias: this.props.antialiasing,
       alpha: true
@@ -84,10 +81,11 @@ export default class PDBView extends Component {
     window.addEventListener("resize", this.resizeRenderer);
     this.mount.appendChild(this.renderer.domElement);
     this.start();
-    this.setState({ loading: false });
   };
 
   resizeRenderer = event => {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
     this.renderer.setSize(this.mount.clientWidth, this.mount.clientHeight);
   };
 
@@ -113,15 +111,6 @@ export default class PDBView extends Component {
 
   loadMolecule = url => {
     const scope = this;
-    let root = new Group();
-    this.root = root;
-    root.scale.set(0.02, 0.02, 0.02);
-    this.scene.add(root);
-    while (root.children.length > 0) {
-      let object = root.children[0];
-      object.parent.remove(object);
-    }
-
     const vertexShader = [
       "precision highp float;",
 
@@ -153,7 +142,7 @@ export default class PDBView extends Component {
       "uniform vec3 cameraPosition;",
       "void main() {",
       "",
-      " gl_FragColor = vec4(vNormal, 1.0);",
+      " gl_FragColor = vec4(normalize(vNormal), 1.0);",
       "",
       "}"
     ].join("\n");
@@ -163,7 +152,7 @@ export default class PDBView extends Component {
       vertexShader: vertexShader,
       fragmentShader: fragmentShader,
       side: DoubleSide,
-      transparent: true
+      transparent: false
     });
 
     const loader = new PDBLoader();
@@ -181,7 +170,6 @@ export default class PDBView extends Component {
         geometryBonds.translate(offset.x, offset.y, offset.z);
         let positions = geometryAtoms.getAttribute("position");
         const instances = positions.count;
-        const material = new MeshNormalMaterial();
         let position = new Vector4();
         let orientation = new Vector4();
 
@@ -206,11 +194,18 @@ export default class PDBView extends Component {
         const mesh = new Mesh( geometry, mat );
         mesh.scale.multiplyScalar(scope.props.atomSize);
         scope.scene.add(mesh);
+        scope.setState({ loading: false });
       } catch (error) {
         console.log(error);
         scope.setState({ useFallback: true, loading: false });
       }
-    });
+    },
+    (xhr) => {},
+    (err) => {
+      console.log(err);
+      scope.setState({ useFallback: true, loading: false });
+    }
+    );
   };
 
   render() {
@@ -227,11 +222,8 @@ export default class PDBView extends Component {
           this.mount = mount;
         }}
       >
-        {this.state.loading && !this.state.useFallback ? (
-          this.props.loader
-        ) : null }
-
-        {this.state.useFallback ? <img src="./pdbfallback.jpg" /> : null}
+        {this.state.loading ? this.props.loader : null}
+        {this.state.useFallback ? this.props.fallback : null}
       </div>
     );
   }
@@ -239,9 +231,13 @@ export default class PDBView extends Component {
 
 PDBView.defaultProps = {
   atomIncrement: 0,
-  atomSize: 300,
-  atomDistance: 75,
-  width: '40vw',
-  height: '40vh',
+  atomSize: 1,
+  atomDistance: 0.5,
+  width: '400px',
+  height: '400px',
   cameraDistance: 150,
+  autoRotate: true,
+  pan: true,
+  loader: null,
+  fallback: null
 };
