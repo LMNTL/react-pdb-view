@@ -9,15 +9,24 @@ A simple React component for displaying molecular orbital models from Protein Da
 If you're in a hurry, the only required prop is `url`.
 
 `<PDBView>` is used as such:
-`   <PDBView
-        url="https://files.rcsb.org/download/6C4G.pdb"
-        atomIncrement={0}
-        width="600px"
-        height="600px"
-        atomSize={200}
-        cameraDistance={100}
-        autoRotate={false}
-      />`
+
+`   <PDBView`  
+
+`        url="https://files.rcsb.org/download/6C4G.pdb"  `
+
+`        atomIncrement={0}  `
+
+`        width="60vw"  `
+
+`        height="60vh"  `
+
+`        atomSize={200}  `
+
+`        cameraDistance={100}  `
+
+`        autoRotate={false}  `
+
+`      />`
 
 ## Props:
 Prop | Variable Type | description | Default Value
