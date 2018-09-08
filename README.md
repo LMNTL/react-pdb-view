@@ -1,4 +1,4 @@
-# React PDB Viewer
+# React PDB View
 
 ## What is it?
 
