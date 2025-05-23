@@ -1,7 +1,5 @@
-import React, { Component } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  BoxBufferGeometry,
-  BufferAttribute,
   Detector,
   DoubleSide,
   IcosahedronBufferGeometry,
@@ -14,230 +12,286 @@ import {
   RawShaderMaterial,
   Scene,
   Vector3,
-  Vector4,
   WebGLRenderer,
 } from "../../node_modules/three-full/builds/Three.es.min.js";
 
+// Converted from class component to functional component using React Hooks.
+// Added support for coloring atoms by element type with customizable colors via 'elementColors' prop.
+export default function PDBView(props) {
+  // State management (replaces this.state)
+  const [useFallback, setUseFallback] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-export default class PDBView extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      useFallback: false,
-      loading: true
+  // Refs for mutable values and DOM elements (replaces this.* properties)
+  const mountRef = useRef(null);
+  const rendererRef = useRef(null);
+  const sceneRef = useRef(null);
+  const cameraRef = useRef(null);
+  const controlsRef = useRef(null);
+  const frameIdRef = useRef(null);
+
+  // Default element colors (RGB, 0-1 scale); can be overridden via props
+  const defaultColors = {
+    C: [0.5, 0.5, 0.5],    // Carbon: Gray
+    O: [1.0, 0.0, 0.0],    // Oxygen: Red
+    N: [0.0, 0.0, 1.0],    // Nitrogen: Blue
+    S: [1.0, 1.0, 0.0],    // Sulfur: Yellow
+    H: [1.0, 1.0, 1.0],    // Hydrogen: White
+    P: [1.0, 0.5, 0.0],     // Phosphorus
+    default: [1.0, 1.0, 1.0],
+  };
+
+  // Effect for initialization and cleanup (replaces componentDidMount and componentWillUnmount)
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    let renderer, scene, camera, controls;
+    // Merge default colors with any passed in via props
+    let elementColors = props.elementColors ? {...defaultColors, ...props.elementColors} : defaultColors;
+
+    const startRendering = () => {
+      const width = mount.clientWidth;
+      const height = mount.clientHeight;
+      scene = new Scene();
+      camera = new PerspectiveCamera(75, width / height, 0.1, 1000);
+      controls = new OrbitControls(camera, mount);
+      controls.autoRotate = props.autoRotate;
+      controls.enablePan = props.pan; // Updated for clarity
+      renderer = new WebGLRenderer({ antialias: props.antialiasing, alpha: true });
+      renderer.shadowMap.enabled = true; // Updated for standard property
+      camera.position.z = props.cameraDistance;
+      renderer.autoClear = false;
+      renderer.setClearColor(0x000000, 0.0);
+      renderer.setSize(width, height);
+
+      // Store in refs
+      rendererRef.current = renderer;
+      sceneRef.current = scene;
+      cameraRef.current = camera;
+      controlsRef.current = controls;
+
+      loadMolecule(props.url);
+      window.addEventListener("resize", resizeRenderer);
+      mount.appendChild(renderer.domElement);
+      start();
     };
-    this.rotating = true;
-    this.mouseX = 0;
-    this.mouseY = 0;
-    this.dragX = 0;
-    this.dragY = 0;
-    this.left = new Vector3(1, 0, 0);
-    this.up = new Vector3(0, 1, 0);
-  }
 
-  componentDidMount() {
-    if (Detector.webgl) {
-      this.startRendering();
-    } else {
-      this.setState({ useFallback: true, loading: false });
-    }
-  }
-
-  componentWillUnmount() {
-    this.stop();
-    this.mount.removeChild(this.renderer.domElement);
-    this.controls.dispose();
-    window.removeEventListener("resize", this.resizeRenderer);
-  }
-
-  componentDidCatch( error, info ) {
-    this.setState({ useFallback: true, loading: false });
-  }
-
-  startRendering = () => {
-    const width = this.mount.clientWidth;
-    const height = this.mount.clientHeight;
-    const scene = new Scene();
-    const camera = new PerspectiveCamera(75, width / height, 0.1, 1000);
-    const controls = new OrbitControls( camera, this.mount );
-    controls.autoRotate = this.props.autoRotate;
-    controls.pan = this.props.pan;
-    const renderer = new WebGLRenderer({
-      antialias: this.props.antialiasing,
-      alpha: true
-    });
-    renderer.shadowMapEnabled = true;
-    camera.position.z = this.props.cameraDistance;
-    renderer.autoClear = false;
-    renderer.setClearColor(0x000000, 0.0);
-    renderer.setSize(width, height);
-
-    this.controls = controls;
-    this.scene = scene;
-    this.camera = camera;
-    this.renderer = renderer;
-
-    this.loadMolecule(this.props.url);
-    window.addEventListener("resize", this.resizeRenderer);
-    this.mount.appendChild(this.renderer.domElement);
-    this.start();
-  };
-
-  resizeRenderer = event => {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(this.mount.clientWidth, this.mount.clientHeight);
-  };
-
-  start = () => {
-    if (!this.frameId) {
-      this.frameId = requestAnimationFrame(this.animate);
-    }
-  };
-
-  stop = () => {
-    cancelAnimationFrame(this.frameId);
-  };
-
-  animate = () => {
-    this.renderScene();
-    this.frameId = window.requestAnimationFrame(this.animate);
-  };
-
-  renderScene() {
-    this.controls.update();
-    this.renderer.render(this.scene, this.camera);
-  }
-
-  loadMolecule = url => {
-    const scope = this;
-    const vertexShader = [
-      "precision highp float;",
-
-      "uniform mat4 modelViewMatrix;",
-      "uniform mat4 projectionMatrix;",
-      "uniform mat4 normalMatrix;",
-      "attribute vec2 uv;",
-      "attribute vec3 position;",
-      "attribute vec3 offset;",
-      "attribute vec3 normal;",
-      "varying vec2 vUv;",
-      "varying vec3 vNormal;",
-      "varying vec3 vPosition;",
-
-      "void main() {",
-
-        "vNormal = normal;",
-        "vPosition = position;",
-        "vUv = uv;",
-        "gl_Position = projectionMatrix * modelViewMatrix * vec4( offset + position, 1.0 );",
-      "}",
-    ].join("\n");
-
-    const fragmentShader = [
-      "precision highp float;",
-      "varying vec3 vNormal;",
-      "varying vec2 vUv;",
-      "varying vec3 vPosition;",
-      "uniform vec3 cameraPosition;",
-      "void main() {",
-      "",
-      " gl_FragColor = vec4(normalize(vNormal), 1.0);",
-      "",
-      "}"
-    ].join("\n");
-
-    const mat = new RawShaderMaterial({
-      uniforms: {},
-      vertexShader: vertexShader,
-      fragmentShader: fragmentShader,
-      side: DoubleSide,
-      transparent: false
-    });
-
-    const loader = new PDBLoader();
-    let offset = new Vector3();
-    loader.load(url, function(pdb) {
-      try {
-        let geometryAtoms = pdb.geometryAtoms;
-        const geometryBonds = pdb.geometryBonds;
-        const json = pdb.json;
-        const sphereGeometry = new IcosahedronBufferGeometry( 1, 2 );
-
-        geometryAtoms.computeBoundingBox();
-        geometryAtoms.boundingBox.getCenter( offset ).negate();
-        geometryAtoms.translate(offset.x, offset.y, offset.z);
-        geometryBonds.translate(offset.x, offset.y, offset.z);
-        let positions = geometryAtoms.getAttribute("position");
-        const instances = positions.count;
-        let position = new Vector4();
-        let orientation = new Vector4();
-
-        const offsets = [];
-        const colors = [];
-        const orientations = [];
-        let [x, y, z] = [0, 0, 0];
-
-
-        let geometry = new InstancedBufferGeometry().copy(sphereGeometry);
-        geometry.attributes.position = sphereGeometry.attributes.position;
-        geometry.attributes.offset = positions;
-        geometry.attributes.uv = sphereGeometry.attributes.uv;
-        geometry.computeBoundingBox();
-        for (let i = 0; i < instances; i += 1 + scope.props.atomIncrement) {
-          x = positions.getX(i) * scope.props.atomDistance;
-          y = positions.getY(i) * scope.props.atomDistance;
-          z = positions.getZ(i) * scope.props.atomDistance;
-          offsets.push( x, y, z );
-        }
-        geometry.addAttribute( 'offset', new InstancedBufferAttribute( new Float32Array( offsets ), 3) );
-        const mesh = new Mesh( geometry, mat );
-        mesh.scale.multiplyScalar(scope.props.atomSize);
-        scope.scene.add(mesh);
-        scope.setState({ loading: false });
-      } catch (error) {
-        console.log(error);
-        scope.setState({ useFallback: true, loading: false });
+    const resizeRenderer = () => {
+      if (cameraRef.current && rendererRef.current && mountRef.current) {
+        cameraRef.current.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight;
+        cameraRef.current.updateProjectionMatrix();
+        rendererRef.current.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
       }
-    },
-    (xhr) => {},
-    (err) => {
-      console.log(err);
-      scope.setState({ useFallback: true, loading: false });
-    }
-    );
-  };
+    };
 
-  render() {
-    return (
-      <div
-        style={{
-          width: this.props.width,
-          height: this.props.height,
-          display: "inline-block",
-          margin: 0
-        }}
-        className={this.props.className}
-        ref={mount => {
-          this.mount = mount;
-        }}
-      >
-        {this.state.loading ? this.props.loader : null}
-        {this.state.useFallback ? this.props.fallback : null}
-      </div>
-    );
-  }
+    const start = () => {
+      if (!frameIdRef.current) {
+        frameIdRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    const stop = () => {
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+        frameIdRef.current = null;
+      }
+    };
+
+    const animate = () => {
+      renderScene();
+      frameIdRef.current = requestAnimationFrame(animate);
+    };
+
+    const renderScene = () => {
+      if (controlsRef.current && rendererRef.current && sceneRef.current && cameraRef.current) {
+        controlsRef.current.update();
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
+    };
+
+    // Updated loadMolecule with element-based coloring
+    const loadMolecule = (url) => {
+      // Updated shaders for color by atom element
+      const vertexShader = `
+        precision highp float;
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+        attribute vec2 uv;
+        attribute vec3 position;
+        attribute vec3 offset;
+        attribute vec3 color;      // Per-atom color
+        attribute vec3 normal;
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vColor;
+        varying vec3 vPosition;
+      
+        void main() {
+          vColor = color;          // Pass atom color to fragment shader
+          vUv = uv;
+          vNormal = normal;
+          vPosition = (modelViewMatrix * vec4(offset + position, 1.0)).xyz;
+          gl_Position = projectionMatrix * vec4(vPosition, 1.0);
+        }
+      `;
+
+      const fragmentShader = `
+        precision highp float;
+        varying vec3 vNormal;
+        varying vec2 vUv;
+        varying vec3 vColor;
+        varying vec3 vPosition;
+      
+        uniform vec3 lightDirection;
+        uniform vec3 lightColor;
+        uniform vec3 ambientColor;
+      
+        void main() {
+          vec3 normal = normalize(vNormal);
+          vec3 lightDir = normalize(lightDirection);
+          float diffuseStrength = max(dot(normal, lightDir), 0.0);
+          vec3 diffuse = diffuseStrength * lightColor;
+          vec3 lighting = ambientColor + diffuse;
+          vec3 finalColor = vColor * lighting;
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `;
+
+      const mat = new RawShaderMaterial({
+        uniforms: {
+          lightDirection: { value: new Vector3(1, 1, 1).normalize() },
+          lightColor: { value: new Float32Array([1, 1, 1])},
+          ambientColor: { value: new Float32Array([0.1, 0.1, .1]) }
+        },
+        vertexShader,
+        fragmentShader,
+        side: DoubleSide,
+        transparent: false,
+      });
+
+      const loader = new PDBLoader();
+      const offset = new Vector3();
+      loader.load(
+        url,
+        (pdb) => {
+          try {
+            const geometryAtoms = pdb.geometryAtoms;
+            const geometryBonds = pdb.geometryBonds;
+            const json = pdb.json;
+            const sphereGeometry = new IcosahedronBufferGeometry(1, 2);
+
+            geometryAtoms.computeBoundingBox();
+            geometryAtoms.boundingBox.getCenter(offset).negate();
+            geometryAtoms.translate(offset.x, offset.y, offset.z);
+            geometryBonds.translate(offset.x, offset.y, offset.z);
+
+            const positions = geometryAtoms.getAttribute("position");
+            const instances = positions.count;
+
+            const offsets = [];
+            const colors = [];  // New: Array for per-atom colors
+            let x, y, z;
+
+            // Process atoms and assign colors based on element
+            for (let i = 0; i < instances; i += 1 + props.atomIncrement) {
+              x = positions.getX(i) * props.atomDistance;
+              y = positions.getY(i) * props.atomDistance;
+              z = positions.getZ(i) * props.atomDistance;
+              offsets.push(x, y, z);
+
+              // Get atom element from PDB data and assign color (customizable via props)
+              const atom = json.atoms[i];
+              const element = atom ? atom[4] : "Unknown";  // Standard PDB: atom[4] is element symbol
+              const color = elementColors?.[element] || elementColors.default;  // If not mapped, use default
+              colors.push(...color);  // Add RGB for this atom
+            }
+
+            // Set up instanced geometry with color attribute
+            const geometry = new InstancedBufferGeometry().copy(sphereGeometry);
+            geometry.attributes.position =  sphereGeometry.getAttribute("position");
+            geometry.attributes.uv = sphereGeometry.getAttribute("uv");
+            geometry.attributes.offset = new InstancedBufferAttribute(new Float32Array(offsets), 3);
+            geometry.attributes.color = new InstancedBufferAttribute(new Float32Array(colors), 3);  // New: Color attribute
+
+            const mesh = new Mesh(geometry, mat);
+            mesh.scale.multiplyScalar(props.atomSize);
+            sceneRef.current.add(mesh);
+
+            setLoading(false);
+          } catch (error) {
+            console.error("Error loading molecule:", error);
+            setUseFallback(true);
+            setLoading(false);
+          }
+        },
+        () => {},  // Progress callback
+        (err) => {
+          console.error("Error fetching PDB:", err);
+          setUseFallback(true);
+          setLoading(false);
+        }
+      );
+    };
+
+    // Main initialization logic
+    try {
+      if (Detector.webgl) {
+        startRendering();
+      } else {
+        setUseFallback(true);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Rendering error:", error);
+      setUseFallback(true);
+      setLoading(false);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      stop();
+      if (mount && renderer?.domElement) {
+        mount.removeChild(renderer.domElement);
+      }
+      if (controls) controls.dispose();
+      window.removeEventListener("resize", resizeRenderer);
+      // Clean up Three.js resources
+      rendererRef.current = null;
+      sceneRef.current = null;
+      cameraRef.current = null;
+      controlsRef.current = null;
+    };
+  }, [props]);  // Re-run if props change (e.g., url, autoRotate)
+
+  // Render the component
+  return (
+    <div
+      style={{
+        width: props.width,
+        height: props.height,
+        display: "inline-block",
+        margin: 0,
+      }}
+      className={props.className}
+      ref={mountRef}
+    >
+      {loading ? props.loader : null}
+      {useFallback ? props.fallback : null}
+    </div>
+  );
 }
 
 PDBView.defaultProps = {
   atomIncrement: 0,
   atomSize: 1,
   atomDistance: 0.5,
-  width: '400px',
-  height: '400px',
+  width: "400px",
+  height: "400px",
   cameraDistance: 150,
   autoRotate: true,
   pan: true,
   loader: null,
-  fallback: null
+  fallback: null,
+  elementColors: null,
 };

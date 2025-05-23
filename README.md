@@ -1,5 +1,3 @@
-# React PDB View
-
 ## What is it?
 
 A simple React component for displaying molecular orbital models from Protein Databank (.pdb) files. Uses [three-full](https://github.com/Itee/three-full) and the PDBLoader class from the Three.js examples to load and display models in a WebGL context. Take a look at the demo [here](https://lmntl.github.io/react-pdb-view/).
@@ -26,6 +24,14 @@ If you're in a hurry, the only required prop is `url`.
 
 `        autoRotate={false}  `
 
+         elementColors={
+           {
+             C: [1.0, 0, 1.0],
+             Ni: [0.5, 0.5, 0],
+             default: [1.0, 1.0, 1.0]
+           }
+         }
+
 `      />`
 
 ## Props:
@@ -43,7 +49,7 @@ Prop | Variable Type | description | Default Value
 `pan` | boolean | Allow panning when right-click dragging? | `true`
 `loader` | JSX element | Element to display while loading, e.g. a CSS spinner. | null
 `fallback` | JSX element | Element displayed in case the component fails to load or errors during operation | null
-
+`elementColors` | object | Mapping of element symbols to RGB colors | null
 ## Todos:
 - Add additional shader options
 - Add keyboard controls for rotation/zooming to OrbitControls

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { render } from "react-dom";
+import { createRoot } from "react-dom/client";
 import PDBView from "../lib";
 import "./styles.css";
 
@@ -57,4 +57,4 @@ class Demo extends Component {
   }
 }
 
-render(<Demo />, document.getElementById("app"));
+createRoot(document.getElementById("app")).render(<Demo />);

@@ -3,11 +3,13 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require('webpack');
 const CompressionPlugin = require('compression-webpack-plugin');
 
-module.exports = {
+module.exports = (env, argv) => {
+    const mode = argv.mode || 'development';
+    return {
   entry: path.join(__dirname, "src/docs"),
   output: {
     path: path.join(__dirname, "docs"),
-    filename: "bundle.js"
+    filename: "[name].bundle.js"
   },
   module: {
     rules: [
@@ -31,11 +33,11 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       'process.env': {
-        'NODE_ENV': JSON.stringify('production')
+        'NODE_ENV': JSON.stringify(mode)
       }
     }),
     new CompressionPlugin({
-      asset: "[path].gz[query]",
+      // filename: "[path][id].gz[query]",
       algorithm: "gzip",
       test: /\.js$|\.css$|\.html$/,
       threshold: 10240,
@@ -46,9 +48,11 @@ module.exports = {
     extensions: [".js", ".jsx"]
   },
   devServer: {
-    contentBase: path.join(__dirname, "docs"),
+    static: {
+        directory: path.join(__dirname, "docs")
+    },
     port: 8000,
-    stats: "minimal"
+    //stats: "minimal"
   },
   optimization: {
     minimize: true,
@@ -59,7 +63,7 @@ module.exports = {
         minChunks: 2,
         maxAsyncRequests: 5,
         maxInitialRequests: 3,
-        name: true,
+        name: '[hash][name].js',
         cacheGroups: {
             default: {
                 minChunks: 1,
@@ -73,4 +77,5 @@ module.exports = {
         }
     }
 }
+    }
 };

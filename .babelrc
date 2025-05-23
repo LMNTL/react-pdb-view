@@ -2,10 +2,5 @@
   "presets": [
     "@babel/env",
     "@babel/react",
-    "jest"
   ],
-  "plugins": [
-    "@babel/plugin-proposal-object-rest-spread",
-    "@babel/plugin-proposal-class-properties"
-  ]
 }
