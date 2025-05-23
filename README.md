@@ -8,36 +8,29 @@ If you're in a hurry, the only required prop is `url`.
 
 `<PDBView>` is used as such:
 
-`   <PDBView`  
-
-`        url="https://files.rcsb.org/download/6C4G.pdb"  `
-
-`        atomIncrement={0}  `
-
-`        width="60vw"  `
-
-`        height="60vh"  `
-
-`        atomSize={200}  `
-
-`        cameraDistance={100}  `
-
-`        autoRotate={false}  `
-
-         elementColors={
-           {
-             C: [1.0, 0, 1.0],
-             Ni: [0.5, 0.5, 0],
-             default: [1.0, 1.0, 1.0]
-           }
-         }
-
-`      />`
+```jsx
+<PDBView
+    url="https://files.rcsb.org/download/6C4G.pdb"
+    atomIncrement={0}
+    width="60vw"
+    height="60vh"
+    atomSize={200}
+    cameraDistance={100}
+    autoRotate={false}
+    elementColors={
+        {
+            C: [1.0, 0, 1.0],
+            Ni: [0.5, 0.5, 0],
+            default: [1.0, 1.0, 1.0]
+        }
+    }
+/>`
+```
 
 ## Props:
 Prop | Variable Type | description | Default Value
 ------------ | ------------- | ------------- | -------------
-`url` | string | URL of a valid .pdb file. | Required
+`url` | string | URL of a valid .pdb file. | *Required*
 `atomIncrement` | number (integer) | Number of atoms to skip while loading. If `atomIncrement` is 3, the viewer will only load and display every 4th atom from the source file. Tweak for speed. | `0`
 `atomSize` | number (float) | Corresponds to the radius of each individual atom | `1`
 `atomDistance` | number (float) | Distance between atoms in the model | `0.5`
@@ -50,6 +43,7 @@ Prop | Variable Type | description | Default Value
 `loader` | JSX element | Element to display while loading, e.g. a CSS spinner. | null
 `fallback` | JSX element | Element displayed in case the component fails to load or errors during operation | null
 `elementColors` | object | Mapping of element symbols to RGB colors | null
+
 ## Todos:
 - Add additional shader options
 - Add keyboard controls for rotation/zooming to OrbitControls
