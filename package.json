@@ -48,6 +48,7 @@
   "dependencies": {
     "@babel/plugin-proposal-optional-chaining": "^7.21.0",
     "react-scripts": "^5.0.1",
-    "shebang-loader": "0.0.1"
+    "shebang-loader": "0.0.1",
+    "three-full": "git://github.com/LMNTL/three-full.git"
   }
 }

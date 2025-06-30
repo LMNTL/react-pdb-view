@@ -6,6 +6,7 @@ import {
       InstancedBufferGeometry,
   InstancedBufferAttribute,
   Mesh,
+    PDBLoader,
   PerspectiveCamera,
   RawShaderMaterial,
   Scene,
@@ -13,7 +14,7 @@ import {
   WebGLRenderer,
   OrbitControls,
 } from "three-full/builds/Three.es.min.js";
-import {PDBLoader} from './pdbloader';
+//import {PDBLoader} from './pdbloader';
 
 // Converted from class component to functional component using React Hooks.
 // Added support for coloring atoms by element type with customizable colors via 'elementColors' prop.
