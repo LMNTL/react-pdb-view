@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Detector,
-  DoubleSide,
-  IcosahedronBufferGeometry,
-  InstancedBufferGeometry,
+    DoubleSide,
+      IcosahedronBufferGeometry,
+      InstancedBufferGeometry,
   InstancedBufferAttribute,
   Mesh,
-  OrbitControls,
   PerspectiveCamera,
-  PDBLoader,
   RawShaderMaterial,
   Scene,
   Vector3,
   WebGLRenderer,
-} from "../../node_modules/three-full/builds/Three.es.min.js";
+  OrbitControls,
+} from "three-full/builds/Three.es.min.js";
+import {PDBLoader} from './pdbloader';
 
 // Converted from class component to functional component using React Hooks.
 // Added support for coloring atoms by element type with customizable colors via 'elementColors' prop.
@@ -21,6 +21,7 @@ export default function PDBView(props) {
   // State management (replaces this.state)
   const [useFallback, setUseFallback] = useState(false);
   const [loading, setLoading] = useState(true);
+
 
   // Refs for mutable values and DOM elements (replaces this.* properties)
   const mountRef = useRef(null);
@@ -57,9 +58,9 @@ export default function PDBView(props) {
       camera = new PerspectiveCamera(75, width / height, 0.1, 1000);
       controls = new OrbitControls(camera, mount);
       controls.autoRotate = props.autoRotate;
-      controls.enablePan = props.pan; // Updated for clarity
+      controls.enablePan = props.pan;
       renderer = new WebGLRenderer({ antialias: props.antialiasing, alpha: true });
-      renderer.shadowMap.enabled = true; // Updated for standard property
+      renderer.shadowMap.enabled = true;
       camera.position.z = props.cameraDistance;
       renderer.autoClear = false;
       renderer.setClearColor(0x000000, 0.0);
@@ -207,16 +208,16 @@ export default function PDBView(props) {
               colors.push(...color);  // Add RGB for this atom
             }
 
-            // Set up instanced geometry with color attribute
-            const geometry = new InstancedBufferGeometry().copy(sphereGeometry);
-            geometry.attributes.position =  sphereGeometry.getAttribute("position");
-            geometry.attributes.uv = sphereGeometry.getAttribute("uv");
-            geometry.attributes.offset = new InstancedBufferAttribute(new Float32Array(offsets), 3);
-            geometry.attributes.color = new InstancedBufferAttribute(new Float32Array(colors), 3);  // New: Color attribute
+              // Set up instanced geometry with color attribute
+              const geometry = new InstancedBufferGeometry().copy(sphereGeometry);
+              geometry.attributes.position = sphereGeometry.getAttribute("position");
+              geometry.attributes.uv = sphereGeometry.getAttribute("uv");
+              geometry.attributes.offset = new InstancedBufferAttribute(new Float32Array(offsets), 3);
+              geometry.attributes.color = new InstancedBufferAttribute(new Float32Array(colors), 3);  // New: Color attribute
 
-            const mesh = new Mesh(geometry, mat);
-            mesh.scale.multiplyScalar(props.atomSize);
-            sceneRef.current.add(mesh);
+              const mesh = new Mesh(geometry, mat);
+              mesh.scale.multiplyScalar(props.atomSize);
+              sceneRef.current.add(mesh);
 
             setLoading(false);
           } catch (error) {
@@ -233,6 +234,8 @@ export default function PDBView(props) {
         }
       );
     };
+
+
 
     // Main initialization logic
     try {
